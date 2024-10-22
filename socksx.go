@@ -40,6 +40,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer listener.Close()
 
 	for {
 		conn, err := listener.Accept()
