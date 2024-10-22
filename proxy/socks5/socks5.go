@@ -161,24 +161,24 @@ func (m Method) isValid() bool {
 func (r Reply) Error(prefix string) error {
 	switch r {
 	case ReplyTTLExpired:
-		return errors.New(fmt.Sprintf("%s: TTL expired", prefix))
+		return fmt.Errorf("%s: TTL expired", prefix)
 	case ReplyNetworkUnreachable:
-		return errors.New(fmt.Sprintf("%s: network unreachable", prefix))
+		return fmt.Errorf("%s: network unreachable", prefix)
 	case ReplyHostUnreachable:
-		return errors.New(fmt.Sprintf("%s: host unreachable", prefix))
+		return fmt.Errorf("%s: host unreachable", prefix)
 	case ReplyGeneralFailure:
-		return errors.New(fmt.Sprintf("%s: general failure", prefix))
+		return fmt.Errorf("%s: general failure", prefix)
 	case ReplyConnRefused:
-		return errors.New(fmt.Sprintf("%s: connection refused", prefix))
+		return fmt.Errorf("%s: connection refused", prefix)
 	case ReplyConnNotAllowed:
-		return errors.New(fmt.Sprintf("%s: connection not allowed", prefix))
+		return fmt.Errorf("%s: connection not allowed", prefix)
 	case ReplyCmdNotSupported:
-		return errors.New(fmt.Sprintf("%s: command not supported", prefix))
+		return fmt.Errorf("%s: command not supported", prefix)
 	case ReplyAtypNotSupported:
-		return errors.New(fmt.Sprintf("%s: address type not supported", prefix))
+		return fmt.Errorf("%s: address type not supported", prefix)
 	case ReplyOK:
 		return nil
 	default:
-		return errors.New(fmt.Sprintf("%s: unknown reply", prefix))
+		return fmt.Errorf("%s: unknown reply", prefix)
 	}
 }
