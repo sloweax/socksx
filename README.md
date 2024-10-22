@@ -18,7 +18,7 @@ $ cat proxies.txt
 socks5 1.2.3.4:123 user pass
 socks5 4.3.2.1:321
 # You can also chain proxies
-socks5 9.8.7.6:1080 | socks5 11.22.33.44 1080
+socks5 9.8.7.6:1080 | socks5 11.22.33.44:1080
 
 $ socksx -p proxies.txt
 
