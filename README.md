@@ -35,3 +35,4 @@ $ for i in {1..10}; do curl ifconfig.me -x socks5://127.0.0.1:1080; echo; done
 # Supported protocols
 
 - socks5 / socks5h
+- socks4 / socks4a

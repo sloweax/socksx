@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/sloweax/socksx/proxy"
+	"github.com/sloweax/socksx/proxy/socks4"
 	"github.com/sloweax/socksx/proxy/socks5"
 	"io"
 	"log"
@@ -123,6 +124,8 @@ func (a *StringArray) Set(value string) error {
 
 func ProxyinfoToDialer(p proxy.ProxyInfo) (proxy.ProxyDialer, error) {
 	switch p.Protocol {
+	case "socks4", "socks4a":
+		return socks4.FromProxyInfo(p)
 	case "socks5", "socks5h":
 		return socks5.FromProxyInfo(p)
 	default:
