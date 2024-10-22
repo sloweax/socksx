@@ -194,7 +194,7 @@ func (d *Dialer) DialWithConn(conn net.Conn, network, address string) (net.Conn,
 	c.bnd = bnd
 	c.remote, _ = NewAddress(address)
 	c.conn = conn
-	return c, reponse.Error("socks5")
+	return c, reponse.Err("socks5")
 }
 
 func (c *Config) hasMethod(method Method) bool {

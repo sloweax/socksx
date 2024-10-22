@@ -158,7 +158,7 @@ func (m Method) isValid() bool {
 	}
 }
 
-func (r Reply) Error(prefix string) error {
+func (r Reply) Err(prefix string) error {
 	switch r {
 	case ReplyTTLExpired:
 		return fmt.Errorf("%s: TTL expired", prefix)

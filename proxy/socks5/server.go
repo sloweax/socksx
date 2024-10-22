@@ -26,7 +26,7 @@ func (s *Server) Handle(conn net.Conn) (Addr, error) {
 	}
 
 	if reply != ReplyOK {
-		return Addr{}, reply.Error("server")
+		return Addr{}, reply.Err("server")
 	}
 
 	return addr, nil
