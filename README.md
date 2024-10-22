@@ -31,3 +31,7 @@ $ for i in {1..10}; do curl ifconfig.me -x socks5://127.0.0.1:1080; echo; done
 11.22.33.44
 ....
 ```
+
+# Supported protocols
+
+- socks5 / socks5h
