@@ -87,12 +87,12 @@ func main() {
 	}
 }
 
-func Bridge(a, b net.Conn) error {
+func Bridge(a, b io.ReadWriteCloser) error {
 	done := make(chan error, 2)
 
 	defer close(done)
 
-	copy := func(a, b net.Conn, done chan error) {
+	copy := func(a, b io.ReadWriteCloser, done chan error) {
 		_, err := io.Copy(a, b)
 		a.Close()
 		b.Close()
