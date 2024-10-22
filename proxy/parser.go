@@ -67,7 +67,11 @@ func loadFile(path string) ([][]ProxyInfo, error) {
 		if strings.HasPrefix(line, "#") {
 			continue
 		}
-		p, err := parseChain(parseFields(line))
+		fields := parseFields(line)
+		if len(fields) == 0 {
+			continue
+		}
+		p, err := parseChain(fields)
 		if err != nil {
 			return nil, err
 		}
