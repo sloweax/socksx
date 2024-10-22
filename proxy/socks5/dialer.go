@@ -24,12 +24,6 @@ func NewDialer(network, address string, config Config) *Dialer {
 	d.network = network
 	d.address = address
 	d.config = config
-	if !d.config.hasMethod(MethodNoAuth) {
-		d.config.methods = append(d.config.methods, MethodNoAuth)
-	}
-	if len(d.config.Username) != 0 && !d.config.hasMethod(MethodUserPass) {
-		d.config.methods = append(d.config.methods, MethodUserPass)
-	}
 	return d
 }
 
