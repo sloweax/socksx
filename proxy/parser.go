@@ -19,34 +19,38 @@ func parseFields(line string) []string {
 }
 
 func parseChain(args []string) ([]ProxyInfo, error) {
-	ps := make([]ProxyInfo, 0)
+	split := make([][]string, 0)
+	opts := make([]string, 0)
 
-	for {
-		p := ProxyInfo{}
-
-		if len(args) < 2 {
-			return nil, errors.New("proxy: invalid proxy chain")
-		}
-
-		p.Protocol = args[0]
-		p.Address = args[1]
-		args = args[2:]
-
-		for i, a := range args {
-			if a == "|" {
-				args = args[i+1:]
-				break
-			} else {
-				p.Args = append(p.Args, a)
-			}
-		}
-
-		ps = append(ps, p)
-
-		if len(args) == len(p.Args) {
-			return ps, nil
+	for _, a := range args {
+		if a == "|" {
+			tmp := make([]string, len(opts))
+			copy(tmp, opts)
+			split = append(split, tmp)
+			opts = opts[:0]
+		} else {
+			opts = append(opts, a)
 		}
 	}
+
+	split = append(split, opts)
+
+	r := make([]ProxyInfo, 0, len(split))
+
+	for _, opts := range split {
+		if len(opts) < 2 {
+			return nil, errors.New("proxy: invalid proxy chain")
+		}
+		p := ProxyInfo{}
+		p.Protocol = opts[0]
+		p.Address = opts[1]
+		if len(opts) > 2 {
+			p.Args = opts[2:]
+		}
+		r = append(r, p)
+	}
+
+	return r, nil
 }
 
 func loadFile(path string) ([][]ProxyInfo, error) {
