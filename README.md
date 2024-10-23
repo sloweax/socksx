@@ -30,7 +30,7 @@ $ for i in {1..10}; do curl ifconfig.me -x socks5://127.0.0.1:1080; echo; done
 
 
 # Advanced config example
-```
+```sh
 # Globally sets connection timeout to 5 seconds
 set ConnTimeout 5s
 # A duration string is a possibly signed sequence of
