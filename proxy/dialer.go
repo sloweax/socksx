@@ -75,10 +75,28 @@ func (d *Dialer) Dial(network, address string) (net.Conn, error) {
 		return nil, err
 	}
 
-	err = conn.SetDeadline(time.Time{})
+	err = pconn.SetDeadline(time.Time{})
 	if err != nil {
-		conn.Close()
+		pconn.Close()
 		return nil, err
+	}
+
+	wtimeout, ok := d.proxies[len(d.proxies)-1].KWArgs()["WriteTimeout"]
+	if ok {
+		err = setTimeoutStr(pconn, wtimeout, pconn.SetWriteDeadline)
+		if err != nil {
+			pconn.Close()
+			return nil, err
+		}
+	}
+
+	rtimeout, ok := d.proxies[len(d.proxies)-1].KWArgs()["ReadTimeout"]
+	if ok {
+		err = setTimeoutStr(pconn, rtimeout, pconn.SetReadDeadline)
+		if err != nil {
+			pconn.Close()
+			return nil, err
+		}
 	}
 
 	return pconn, nil
@@ -95,15 +113,13 @@ func setDialerConn(conn net.Conn, dialer ProxyDialer) error {
 		return nil
 	}
 
-	duration, err := time.ParseDuration(durationstr)
+	return setTimeoutStr(conn, durationstr, conn.SetDeadline)
+}
+
+func setTimeoutStr(conn net.Conn, s string, fc func(time.Time) error) error {
+	d, err := time.ParseDuration(s)
 	if err != nil {
 		return err
 	}
-
-	err = conn.SetDeadline(time.Now().Add(duration))
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return fc(time.Now().Add(d))
 }

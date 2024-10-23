@@ -50,6 +50,10 @@ set ConnTimeout 1s | socks5 1.2.3.4:1234 | set ConnTimeout 3s | socks5 4.3.2.1:4
 unset ConnTimeout
 
 socks5 1.2.3.4:1234
+
+# Read/Write timeout (only applied to the last proxy of the chain)
+set ReadTimeout 1s
+set WriteTimeout 1s
 ```
 
 # Supported protocols
