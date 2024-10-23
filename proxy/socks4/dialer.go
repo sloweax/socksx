@@ -18,6 +18,7 @@ type Dialer struct {
 	address string
 	network string
 	config  Config
+	kwargs  map[string]string
 }
 
 type Addr struct {
@@ -43,11 +44,12 @@ const (
 	AtyIPv6        AddressType = 2 // try using this on socks4a
 )
 
-func NewDialer(network, address string, config Config) *Dialer {
+func NewDialer(network, address string, kwargs map[string]string, config Config) *Dialer {
 	d := new(Dialer)
 	d.network = network
 	d.address = address
 	d.config = config
+	d.kwargs = kwargs
 	return d
 }
 
@@ -62,6 +64,10 @@ func (d *Dialer) Protocol() string {
 
 func (d *Dialer) String() string {
 	return d.address
+}
+
+func (d *Dialer) KWArgs() map[string]string {
+	return d.kwargs
 }
 
 func (d *Dialer) Network() string {

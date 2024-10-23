@@ -20,7 +20,7 @@ func main() {
 	var proxy_files StringArray
 	var addr string
 
-	flag.Var(&proxy_files, "p", "load proxies from file")
+	flag.Var(&proxy_files, "c", "load config file")
 	flag.StringVar(&addr, "a", "127.0.0.1:1080", "listen on address")
 	flag.Parse()
 

@@ -16,5 +16,5 @@ func FromProxyInfo(p proxy.ProxyInfo) (proxy.ProxyDialer, error) {
 	if len(p.Args) == 1 {
 		config.ID = p.Args[0]
 	}
-	return NewDialer("tcp", p.Address, config), nil
+	return NewDialer("tcp", p.Address, p.KWArgs, config), nil
 }
