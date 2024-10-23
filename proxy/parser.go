@@ -3,15 +3,19 @@ package proxy
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 	"unicode"
 )
 
+var globalKWArgs = map[string]string{}
+
 type ProxyInfo struct {
 	Protocol string
 	Address  string
 	Args     []string
+	KWArgs   map[string]string
 }
 
 func parseFields(line string) []string {
@@ -37,17 +41,63 @@ func parseChain(args []string) ([]ProxyInfo, error) {
 
 	r := make([]ProxyInfo, 0, len(split))
 
+	var err error
+	kwargs := globalKWArgs
+
 	for _, opts := range split {
 		if len(opts) < 2 {
-			return nil, errors.New("proxy: invalid proxy chain")
+			return nil, errors.New("config: found invalid proxy chain")
 		}
 		p := ProxyInfo{}
 		p.Protocol = opts[0]
 		p.Address = opts[1]
+		p.KWArgs = kwargs
 		if len(opts) > 2 {
 			p.Args = opts[2:]
 		}
+
+		if isKWArgs(p) {
+			kwargs, err = handleKWArgs(p, kwargs)
+			if err != nil {
+				return nil, err
+			}
+			continue
+		}
+
 		r = append(r, p)
+	}
+
+	if len(r) == 0 && len(split) == 1 {
+		// changing global kwargs
+		globalKWArgs = kwargs
+	}
+
+	return r, nil
+}
+
+func isKWArgs(p ProxyInfo) bool {
+	switch p.Protocol {
+	case "set", "unset":
+		return true
+	default:
+		return false
+	}
+}
+
+func handleKWArgs(p ProxyInfo, root map[string]string) (map[string]string, error) {
+	r := map[string]string{}
+	for k, v := range root {
+		r[k] = v
+	}
+
+	switch p.Protocol {
+	case "set":
+		if len(p.Args) != 1 {
+			return nil, fmt.Errorf("config: expected `set key value`, got `set %s`", p.Address)
+		}
+		r[p.Address] = p.Args[0]
+	case "unset":
+		delete(r, p.Address)
 	}
 
 	return r, nil
@@ -75,7 +125,9 @@ func loadFile(path string) ([][]ProxyInfo, error) {
 		if err != nil {
 			return nil, err
 		}
-		ps = append(ps, p)
+		if len(p) != 0 {
+			ps = append(ps, p)
+		}
 	}
 
 	if err := scanner.Err(); err != nil {
