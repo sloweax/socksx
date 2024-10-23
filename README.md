@@ -54,6 +54,9 @@ socks5 1.2.3.4:1234
 # Read/Write timeout (only applied to the last proxy of the chain)
 set ReadTimeout 1s
 set WriteTimeout 1s
+
+# Clears all key value pair
+clear
 ```
 
 # Supported protocols

@@ -45,14 +45,19 @@ func parseChain(args []string) ([]ProxyInfo, error) {
 	kwargs := globalKWArgs
 
 	for _, opts := range split {
-		if len(opts) < 2 {
+		p := ProxyInfo{KWArgs: kwargs}
+
+		switch len(opts) {
+		case 0:
 			return nil, errors.New("config: found invalid proxy chain")
-		}
-		p := ProxyInfo{}
-		p.Protocol = opts[0]
-		p.Address = opts[1]
-		p.KWArgs = kwargs
-		if len(opts) > 2 {
+		case 1:
+			p.Protocol = opts[0]
+		case 2:
+			p.Protocol = opts[0]
+			p.Address = opts[1]
+		default:
+			p.Protocol = opts[0]
+			p.Address = opts[1]
 			p.Args = opts[2:]
 		}
 
@@ -64,10 +69,14 @@ func parseChain(args []string) ([]ProxyInfo, error) {
 			continue
 		}
 
+		if len(opts) < 2 {
+			return nil, errors.New("config: found invalid proxy chain")
+		}
+
 		r = append(r, p)
 	}
 
-	if len(r) == 0 && len(split) == 1 {
+	if len(r) == 0 && len(split) >= 1 {
 		// changing global kwargs
 		globalKWArgs = kwargs
 	}
@@ -77,7 +86,7 @@ func parseChain(args []string) ([]ProxyInfo, error) {
 
 func isKWArgs(p ProxyInfo) bool {
 	switch p.Protocol {
-	case "set", "unset":
+	case "set", "unset", "clear":
 		return true
 	default:
 		return false
@@ -98,6 +107,8 @@ func handleKWArgs(p ProxyInfo, root map[string]string) (map[string]string, error
 		r[p.Address] = p.Args[0]
 	case "unset":
 		delete(r, p.Address)
+	case "clear":
+		return map[string]string{}, nil
 	}
 
 	return r, nil
