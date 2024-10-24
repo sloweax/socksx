@@ -98,8 +98,7 @@ func main() {
 			}
 
 			for i := 0; i < retry+1; i++ {
-				chain := picker.Next()
-				proxy, err = chain.ToDialer()
+				proxy, err = picker.Next().ToDialer()
 				if err != nil {
 					log.Print(err)
 					return

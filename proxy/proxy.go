@@ -92,10 +92,10 @@ func (p *ProxyInfo) String() string {
 	return a
 }
 
-func (c *Chain) ToDialer() (*Dialer, error) {
-	dialers := make([]ProxyDialer, len(*c))
+func (c Chain) ToDialer() (*Dialer, error) {
+	dialers := make([]ProxyDialer, len(c))
 
-	for i, p := range *c {
+	for i, p := range c {
 		d, err := p.ToDialer()
 		if err != nil {
 			return nil, err
