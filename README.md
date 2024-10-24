@@ -11,7 +11,7 @@ Usage of socksx
   -c value
     	load config file
   -r int
-    	retry chain connection x times until success
+    	if chain connection fails, retry with another one x times
   -verbose
     	log additional info
 ```

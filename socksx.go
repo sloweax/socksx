@@ -28,7 +28,7 @@ func main() {
 
 	flag.Var(&proxy_files, "c", "load config file")
 	flag.StringVar(&addr, "a", "127.0.0.1:1080", "listen on address")
-	flag.IntVar(&retry, "r", 0, "retry chain connection x times until success")
+	flag.IntVar(&retry, "r", 0, "if chain connection fails, retry with another one x times")
 	flag.BoolVar(&verbose, "verbose", false, "log additional info")
 	flag.Parse()
 
