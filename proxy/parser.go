@@ -145,8 +145,8 @@ func parseChain(args []string) (Chain, error) {
 			p.Args = opts[2:]
 		}
 
-		if isKWArgs(p) {
-			kwargs, err = handleKWArgs(p, kwargs)
+		if isKWArgs(&p) {
+			kwargs, err = handleKWArgs(&p, kwargs)
 			if err != nil {
 				return nil, err
 			}
@@ -168,7 +168,7 @@ func parseChain(args []string) (Chain, error) {
 	return r, nil
 }
 
-func isKWArgs(p ProxyInfo) bool {
+func isKWArgs(p *ProxyInfo) bool {
 	switch p.Protocol {
 	case "set", "unset", "clear":
 		return true
@@ -177,7 +177,7 @@ func isKWArgs(p ProxyInfo) bool {
 	}
 }
 
-func handleKWArgs(p ProxyInfo, root map[string]string) (map[string]string, error) {
+func handleKWArgs(p *ProxyInfo, root map[string]string) (map[string]string, error) {
 	r := map[string]string{}
 	for k, v := range root {
 		r[k] = v
@@ -196,18 +196,4 @@ func handleKWArgs(p ProxyInfo, root map[string]string) (map[string]string, error
 	}
 
 	return r, nil
-}
-
-func (p *ProxyInfo) String() string {
-	a := p.Protocol
-	if len(p.Address) != 0 {
-		a += " " + p.Address
-	}
-	for _, arg := range p.Args {
-		a += " " + fmt.Sprintf("%q", arg)
-	}
-	for k, v := range p.KWArgs {
-		a += fmt.Sprintf(" %s=%q", k, v)
-	}
-	return a
 }

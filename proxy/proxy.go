@@ -78,6 +78,20 @@ func (p *ProxyInfo) ToSOCKS5() (ProxyDialer, error) {
 
 }
 
+func (p *ProxyInfo) String() string {
+	a := p.Protocol
+	if len(p.Address) != 0 {
+		a += " " + p.Address
+	}
+	for _, arg := range p.Args {
+		a += " " + fmt.Sprintf("%q", arg)
+	}
+	for k, v := range p.KWArgs {
+		a += fmt.Sprintf(" %s=%q", k, v)
+	}
+	return a
+}
+
 func (c *Chain) ToDialer() (*Dialer, error) {
 	dialers := make([]ProxyDialer, len(*c))
 
