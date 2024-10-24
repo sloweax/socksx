@@ -1,10 +1,8 @@
 package proxy
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 )
 
@@ -205,57 +203,6 @@ func handleKWArgs(p ProxyInfo, root map[string]string) (map[string]string, error
 	}
 
 	return r, nil
-}
-
-func loadFile(path string) ([][]ProxyInfo, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	ps := make([][]ProxyInfo, 0)
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.HasPrefix(line, "#") {
-			continue
-		}
-		fields, err := parseFields(line)
-		if err != nil {
-			return nil, err
-		}
-		if len(fields) == 0 {
-			continue
-		}
-		p, err := parseChain(fields)
-		if err != nil {
-			return nil, err
-		}
-		if len(p) != 0 {
-			ps = append(ps, p)
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
-
-	return ps, nil
-}
-
-func LoadFiles(paths ...string) ([][]ProxyInfo, error) {
-	ps := make([][]ProxyInfo, 0)
-
-	for _, path := range paths {
-		p, err := loadFile(path)
-		if err != nil {
-			return nil, err
-		}
-		ps = append(ps, p...)
-	}
-
-	return ps, nil
 }
 
 func (p *ProxyInfo) String() string {

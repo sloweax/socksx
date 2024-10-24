@@ -7,8 +7,8 @@ import (
 	"io"
 	"log"
 	"net"
+	"os"
 	"strings"
-	"sync"
 
 	"github.com/sloweax/socksx/proxy"
 	"github.com/sloweax/socksx/proxy/socks4"
@@ -28,25 +28,33 @@ func main() {
 	flag.BoolVar(&verbose, "verbose", false, "log additional info")
 	flag.Parse()
 
-	proxies_index := 0
-	proxies_mutex := sync.RWMutex{}
-	proxies_list, err := proxy.LoadFiles(proxy_files...)
-	if err != nil {
-		log.Fatal(err)
+	picker := proxy.RoundRobin{}
+
+	for _, file := range proxy_files {
+		f, err := os.Open(file)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if err := picker.Load(f); err != nil {
+			log.Fatal(err)
+		}
+
+		f.Close()
+	}
+
+	if picker.Len() == 0 {
+		log.Fatal("no loaded proxies")
 	}
 
 	if verbose {
-		for i, ps := range proxies_list {
+		for i, ps := range picker.All() {
 			chain := make([]string, len(ps))
 			for i, p := range ps {
 				chain[i] = p.String()
 			}
 			log.Printf("chain %d: %s", i, strings.Join(chain, " | "))
 		}
-	}
-
-	if len(proxies_list) == 0 {
-		log.Fatal("no loaded proxies")
 	}
 
 	server := new(socks5.Server)
@@ -72,10 +80,7 @@ func main() {
 				return
 			}
 
-			proxies_mutex.Lock()
-			proxies := proxies_list[proxies_index%len(proxies_list)]
-			proxies_index += 1
-			proxies_mutex.Unlock()
+			proxies := picker.Next()
 
 			chain, err := ProxyDialerList(proxies...)
 			if err != nil {
