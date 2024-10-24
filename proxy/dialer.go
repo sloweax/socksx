@@ -33,14 +33,14 @@ func (d *Dialer) Dial(network, address string) (net.Conn, error) {
 	}
 
 	p := d.proxies[0]
-	entryctx, cancel, err := proxyCtx(d.proxies[0], context.Background())
+	entryctx, cancel, err := proxyCtx(p, context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("%s %s: %w", p.Protocol(), p.String(), err)
 	}
 	defer cancel()
 
 	dialer := net.Dialer{}
-	conn, err := dialer.DialContext(entryctx, d.proxies[0].Network(), d.proxies[0].String())
+	conn, err := dialer.DialContext(entryctx, p.Network(), p.String())
 	if err != nil {
 		return nil, fmt.Errorf("%s %s: %w", p.Protocol(), p.String(), err)
 	}
