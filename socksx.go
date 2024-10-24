@@ -19,10 +19,12 @@ type StringArray []string
 
 func main() {
 
-	var proxy_files StringArray
-	var addr string
-	var verbose bool
-	var retry int
+	var (
+		proxy_files StringArray
+		addr        string
+		verbose     bool
+		retry       int
+	)
 
 	flag.Var(&proxy_files, "c", "load config file")
 	flag.StringVar(&addr, "a", "127.0.0.1:1080", "listen on address")
