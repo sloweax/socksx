@@ -161,3 +161,17 @@ func LoadFiles(paths ...string) ([][]ProxyInfo, error) {
 
 	return ps, nil
 }
+
+func (p *ProxyInfo) String() string {
+	a := p.Protocol
+	if len(p.Address) != 0 {
+		a += " " + p.Address
+	}
+	if len(p.Args) != 0 {
+		a += " " + strings.Join(p.Args, " ")
+	}
+	for k, v := range p.KWArgs {
+		a += fmt.Sprintf(" %s=%q", k, v)
+	}
+	return a
+}

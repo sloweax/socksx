@@ -4,13 +4,15 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/sloweax/socksx/proxy"
-	"github.com/sloweax/socksx/proxy/socks4"
-	"github.com/sloweax/socksx/proxy/socks5"
 	"io"
 	"log"
 	"net"
+	"strings"
 	"sync"
+
+	"github.com/sloweax/socksx/proxy"
+	"github.com/sloweax/socksx/proxy/socks4"
+	"github.com/sloweax/socksx/proxy/socks5"
 )
 
 type StringArray []string
@@ -19,9 +21,11 @@ func main() {
 
 	var proxy_files StringArray
 	var addr string
+	var verbose bool
 
 	flag.Var(&proxy_files, "c", "load config file")
 	flag.StringVar(&addr, "a", "127.0.0.1:1080", "listen on address")
+	flag.BoolVar(&verbose, "verbose", false, "log additional info")
 	flag.Parse()
 
 	proxies_index := 0
@@ -29,6 +33,16 @@ func main() {
 	proxies_list, err := proxy.LoadFiles(proxy_files...)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	if verbose {
+		for i, ps := range proxies_list {
+			chain := make([]string, len(ps))
+			for i, p := range ps {
+				chain[i] = p.String()
+			}
+			log.Printf("chain %d: %s", i, strings.Join(chain, " | "))
+		}
 	}
 
 	if len(proxies_list) == 0 {
