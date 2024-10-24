@@ -62,7 +62,7 @@ clear
 
 # If you want to set a key/value or socks5 password with a special character
 # (eg. whitespaces), you can use quotted strings
-set key "v a l u e" | socks5 127.0.0.1:1234 user "my password"
+set key "v a l u e" | socks5 127.0.0.1:1234 user 'my password'
 ```
 
 # Supported protocols
