@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/sloweax/socksx/proxy"
 	"github.com/sloweax/socksx/proxy/socks5"
@@ -98,12 +100,32 @@ func main() {
 			}
 
 			for i := 0; i < retry+1; i++ {
-				proxy, err = picker.Next().ToDialer()
+				var (
+					ctx    context.Context
+					cancel context.CancelFunc
+				)
+
+				chain := picker.Next()
+				proxy, err = chain.ToDialer()
 				if err != nil {
 					log.Print(fmt.Errorf("server: %w", err))
 					return
 				}
-				rconn, err = proxy.Dial("tcp", raddr.String())
+
+				timeoutstr, ok := chain[0].KWArgs["ChainConnTimeout"]
+				if ok {
+					duration, err := time.ParseDuration(timeoutstr)
+					if err != nil {
+						log.Print(err)
+						return
+					}
+					ctx, cancel = context.WithTimeout(context.Background(), duration)
+					defer cancel()
+				} else {
+					ctx = context.Background()
+				}
+
+				rconn, err = proxy.DialContext(ctx, "tcp", raddr.String())
 				if err != nil {
 					log.Print(err)
 					continue

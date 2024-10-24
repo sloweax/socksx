@@ -27,13 +27,13 @@ func (d *Dialer) String() string {
 	return strings.Join(a, " | ")
 }
 
-func (d *Dialer) Dial(network, address string) (net.Conn, error) {
+func (d *Dialer) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
 	if len(d.proxies) == 0 {
 		return nil, errors.New("no dialers")
 	}
 
 	p := d.proxies[0]
-	entryctx, cancel, err := proxyCtx(p, context.Background())
+	entryctx, cancel, err := proxyCtx(p, ctx)
 	if err != nil {
 		return nil, fmt.Errorf("%s %s: %w", p.Protocol(), p.String(), err)
 	}
@@ -63,7 +63,7 @@ func (d *Dialer) Dial(network, address string) (net.Conn, error) {
 		}
 
 		if i != 0 {
-			parent = context.Background()
+			parent = ctx
 		} else {
 			parent = entryctx
 		}

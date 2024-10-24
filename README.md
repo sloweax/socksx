@@ -59,6 +59,9 @@ socks5 1.2.3.4:1234
 set ReadTimeout 1s
 set WriteTimeout 1s
 
+# Maximum connection for the whole chain is 2 seconds
+set ChainConnTimeout 2s | socks5 1.2.3.4:1234 | socks5 4.3.2.1:4321
+
 # Clears all key value pair
 clear
 
