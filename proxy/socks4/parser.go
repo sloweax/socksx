@@ -2,6 +2,7 @@ package socks4
 
 import (
 	"errors"
+
 	"github.com/sloweax/socksx/proxy"
 )
 

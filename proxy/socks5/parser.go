@@ -2,6 +2,7 @@ package socks5
 
 import (
 	"errors"
+
 	"github.com/sloweax/socksx/proxy"
 )
 
