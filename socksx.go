@@ -28,7 +28,7 @@ func main() {
 
 	flag.Var(&proxy_files, "c", "load config file")
 	flag.StringVar(&addr, "a", "127.0.0.1:1080", "listen on address")
-	flag.IntVar(&retry, "r", 1, "retry chain connection x times until success")
+	flag.IntVar(&retry, "r", 0, "retry chain connection x times until success")
 	flag.BoolVar(&verbose, "verbose", false, "log additional info")
 	flag.Parse()
 
@@ -98,7 +98,7 @@ func main() {
 				return
 			}
 
-			for i := 0; i < retry; i++ {
+			for i := 0; i < retry+1; i++ {
 				proxies := picker.Next()
 
 				chain, err = ProxyDialerList(proxies...)
