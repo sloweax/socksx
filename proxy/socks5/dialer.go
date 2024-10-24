@@ -1,6 +1,7 @@
 package socks5
 
 import (
+	"context"
 	"errors"
 	"io"
 	"math"
@@ -167,34 +168,57 @@ func (d *Dialer) userPassAuth(rw io.ReadWriter) error {
 	return nil
 }
 
-func (d *Dialer) DialWithConn(conn net.Conn, network, address string) (net.Conn, error) {
+func (d *Dialer) DialContextWithConn(ctx context.Context, conn net.Conn, network, address string) (net.Conn, error) {
 	if network != "tcp" {
 		return nil, errors.New("socks5: tcp only")
 	}
 
-	method, err := d.negotiateMethods(conn)
-	if err != nil {
-		return nil, err
+	type result struct {
+		err  error
+		conn net.Conn
 	}
 
-	if err = d.handleAuth(conn, method); err != nil {
-		return nil, err
+	cresult := make(chan result, 1)
+
+	go func() {
+		defer close(cresult)
+		method, err := d.negotiateMethods(conn)
+		if err != nil {
+			cresult <- result{err: err}
+			return
+		}
+
+		if err = d.handleAuth(conn, method); err != nil {
+			cresult <- result{err: err}
+			return
+		}
+
+		if err = d.request(conn, CmdConnect, address); err != nil {
+			cresult <- result{err: err}
+			return
+		}
+
+		reponse, bnd, err := d.response(conn)
+		if err != nil {
+			cresult <- result{err: err}
+			return
+		}
+
+		c := new(Conn)
+		c.bnd = bnd
+		c.remote, _ = NewAddress(address)
+		c.conn = conn
+		cresult <- result{conn: c, err: reponse.Err(d.Protocol())}
+	}()
+
+	select {
+	case <-ctx.Done():
+		conn.Close()
+		return nil, ctx.Err()
+	case result := <-cresult:
+		return result.conn, result.err
 	}
 
-	if err = d.request(conn, CmdConnect, address); err != nil {
-		return nil, err
-	}
-
-	reponse, bnd, err := d.response(conn)
-	if err != nil {
-		return nil, err
-	}
-
-	c := new(Conn)
-	c.bnd = bnd
-	c.remote, _ = NewAddress(address)
-	c.conn = conn
-	return c, reponse.Err("socks5")
 }
 
 func (c *Config) hasMethod(method Method) bool {

@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net"
@@ -30,7 +31,7 @@ type ProxyDialer interface {
 	net.Addr
 	Protocol() string
 	KWArgs() map[string]string
-	DialWithConn(conn net.Conn, network, address string) (net.Conn, error)
+	DialContextWithConn(ctx context.Context, conn net.Conn, network, address string) (net.Conn, error)
 }
 
 func (p *ProxyInfo) ToDialer() (ProxyDialer, error) {

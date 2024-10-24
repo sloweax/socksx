@@ -1,6 +1,7 @@
 package socks4
 
 import (
+	"context"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -115,30 +116,50 @@ func (d *Dialer) response(rw io.ReadWriter) (byte, Addr, error) {
 	return buf[1], addr, nil
 }
 
-func (d *Dialer) DialWithConn(conn net.Conn, network, address string) (net.Conn, error) {
+func (d *Dialer) DialContextWithConn(ctx context.Context, conn net.Conn, network, address string) (net.Conn, error) {
 	if network != "tcp" {
 		return nil, errors.New(d.Protocol() + ": tcp only")
 	}
 
-	if err := d.request(conn, CmdConnect, address); err != nil {
-		return nil, err
+	type result struct {
+		err  error
+		conn net.Conn
 	}
 
-	reply, _, err := d.response(conn)
-	if err != nil {
-		return nil, err
+	cresult := make(chan result, 1)
+
+	go func() {
+		defer close(cresult)
+		if err := d.request(conn, CmdConnect, address); err != nil {
+			cresult <- result{err: err}
+			return
+		}
+
+		reply, _, err := d.response(conn)
+		if err != nil {
+			cresult <- result{err: err}
+			return
+		}
+
+		if reply != ReplyOK {
+			cresult <- result{err: fmt.Errorf("%s: request rejected", d.Protocol())}
+			return
+		}
+
+		c := Conn{}
+		c.local = conn.LocalAddr()
+		c.remote, _ = NewAddress(address, d.config.T)
+		c.conn = conn
+		cresult <- result{conn: &c}
+	}()
+
+	select {
+	case <-ctx.Done():
+		conn.Close()
+		return nil, ctx.Err()
+	case result := <-cresult:
+		return result.conn, result.err
 	}
-
-	if reply != ReplyOK {
-		return nil, errors.New(d.Protocol() + ": request rejected")
-	}
-
-	c := Conn{}
-	c.local = conn.LocalAddr()
-	c.remote, _ = NewAddress(address, d.config.T)
-	c.conn = conn
-
-	return &c, nil
 }
 
 func NewAddress(addr string, t int) (Addr, error) {

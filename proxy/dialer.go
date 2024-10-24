@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net"
@@ -31,30 +32,50 @@ func (d *Dialer) Dial(network, address string) (net.Conn, error) {
 		return nil, errors.New("no dialers")
 	}
 
-	dialer := net.Dialer{}
-	durationstr, ok := d.proxies[0].KWArgs()["ConnTimeout"]
-	if ok {
-		duration, err := time.ParseDuration(durationstr)
-		if err != nil {
-			return nil, err
-		}
-		dialer.Timeout = duration
-	}
+	var (
+		pctx   context.Context
+		cancel context.CancelFunc
+		err    error
+	)
 
-	ipconn, err := dialer.Dial(d.proxies[0].Network(), d.proxies[0].String())
+	pctx, cancel, err = proxyCtx(d.proxies[0], context.Background())
 	if err != nil {
 		return nil, err
 	}
-	conn := ipconn
+	defer cancel()
 
-	for i, p := range d.proxies[0 : len(d.proxies)-1] {
-		err = setDialerConn(conn, p)
-		if err != nil {
-			conn.Close()
-			return nil, err
+	dialer := net.Dialer{}
+	conn, err := dialer.DialContext(pctx, d.proxies[0].Network(), d.proxies[0].String())
+	if err != nil {
+		return nil, err
+	}
+
+	for i := 0; i < len(d.proxies); i++ {
+		p := d.proxies[i]
+
+		var (
+			pnetwork string
+			paddress string
+		)
+
+		if i == len(d.proxies)-1 {
+			pnetwork = network
+			paddress = address
+		} else {
+			pnetwork = d.proxies[i+1].Network()
+			paddress = d.proxies[i+1].String()
 		}
 
-		pconn, err := p.DialWithConn(conn, d.proxies[i+1].Network(), d.proxies[i+1].String())
+		if i != 0 {
+			pctx, cancel, err = proxyCtx(p, context.Background())
+			if err != nil {
+				conn.Close()
+				return nil, err
+			}
+			defer cancel()
+		}
+
+		pconn, err := p.DialContextWithConn(pctx, conn, pnetwork, paddress)
 		if err != nil {
 			conn.Close()
 			return nil, err
@@ -63,53 +84,25 @@ func (d *Dialer) Dial(network, address string) (net.Conn, error) {
 		conn = pconn
 	}
 
-	err = setDialerConn(conn, d.proxies[len(d.proxies)-1])
-	if err != nil {
-		conn.Close()
-		return nil, err
-	}
-
-	pconn, err := d.proxies[len(d.proxies)-1].DialWithConn(conn, network, address)
-	if err != nil {
-		conn.Close()
-		return nil, err
-	}
-
-	err = pconn.SetDeadline(time.Time{})
-	if err != nil {
-		pconn.Close()
-		return nil, err
-	}
-
 	wtimeout, ok := d.proxies[len(d.proxies)-1].KWArgs()["WriteTimeout"]
 	if ok {
-		err = setTimeoutStr(pconn, wtimeout, pconn.SetWriteDeadline)
+		err = setTimeoutStr(conn, wtimeout, conn.SetWriteDeadline)
 		if err != nil {
-			pconn.Close()
+			conn.Close()
 			return nil, err
 		}
 	}
 
 	rtimeout, ok := d.proxies[len(d.proxies)-1].KWArgs()["ReadTimeout"]
 	if ok {
-		err = setTimeoutStr(pconn, rtimeout, pconn.SetReadDeadline)
+		err = setTimeoutStr(conn, rtimeout, conn.SetReadDeadline)
 		if err != nil {
-			pconn.Close()
+			conn.Close()
 			return nil, err
 		}
 	}
 
-	return pconn, nil
-}
-
-func setDialerConn(conn net.Conn, dialer ProxyDialer) error {
-	durationstr, ok := dialer.KWArgs()["ConnTimeout"]
-
-	if !ok {
-		return conn.SetDeadline(time.Time{})
-	}
-
-	return setTimeoutStr(conn, durationstr, conn.SetDeadline)
+	return conn, nil
 }
 
 func setTimeoutStr(conn net.Conn, s string, fc func(time.Time) error) error {
@@ -118,4 +111,17 @@ func setTimeoutStr(conn net.Conn, s string, fc func(time.Time) error) error {
 		return err
 	}
 	return fc(time.Now().Add(d))
+}
+
+func proxyCtx(proxy ProxyDialer, parent context.Context) (context.Context, context.CancelFunc, error) {
+	durationstr, ok := proxy.KWArgs()["ConnTimeout"]
+	if !ok {
+		return parent, nil, nil
+	}
+	duration, err := time.ParseDuration(durationstr)
+	if err != nil {
+		return nil, nil, err
+	}
+	ctx, cancel := context.WithTimeout(parent, duration)
+	return ctx, cancel, nil
 }
