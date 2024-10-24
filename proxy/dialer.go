@@ -32,20 +32,14 @@ func (d *Dialer) Dial(network, address string) (net.Conn, error) {
 		return nil, errors.New("no dialers")
 	}
 
-	var (
-		pctx   context.Context
-		cancel context.CancelFunc
-		err    error
-	)
-
-	pctx, cancel, err = proxyCtx(d.proxies[0], context.Background())
+	entryctx, cancel, err := proxyCtx(d.proxies[0], context.Background())
 	if err != nil {
 		return nil, err
 	}
 	defer cancel()
 
 	dialer := net.Dialer{}
-	conn, err := dialer.DialContext(pctx, d.proxies[0].Network(), d.proxies[0].String())
+	conn, err := dialer.DialContext(entryctx, d.proxies[0].Network(), d.proxies[0].String())
 	if err != nil {
 		return nil, err
 	}
@@ -56,6 +50,7 @@ func (d *Dialer) Dial(network, address string) (net.Conn, error) {
 		var (
 			pnetwork string
 			paddress string
+			parent   context.Context
 		)
 
 		if i == len(d.proxies)-1 {
@@ -67,20 +62,23 @@ func (d *Dialer) Dial(network, address string) (net.Conn, error) {
 		}
 
 		if i != 0 {
-			pctx, cancel, err = proxyCtx(p, context.Background())
-			if err != nil {
-				conn.Close()
-				return nil, err
-			}
-			defer cancel()
+			parent = context.Background()
+		} else {
+			parent = entryctx
 		}
+
+		pctx, pcancel, err := proxyCtx(p, parent)
+		if err != nil {
+			conn.Close()
+			return nil, err
+		}
+		defer pcancel()
 
 		pconn, err := p.DialContextWithConn(pctx, conn, pnetwork, paddress)
 		if err != nil {
 			conn.Close()
 			return nil, err
 		}
-
 		conn = pconn
 	}
 
@@ -116,12 +114,15 @@ func setTimeoutStr(conn net.Conn, s string, fc func(time.Time) error) error {
 func proxyCtx(proxy ProxyDialer, parent context.Context) (context.Context, context.CancelFunc, error) {
 	durationstr, ok := proxy.KWArgs()["ConnTimeout"]
 	if !ok {
-		return parent, nil, nil
+		ctx, cancel := context.WithCancel(parent)
+		return ctx, cancel, nil
 	}
+
 	duration, err := time.ParseDuration(durationstr)
 	if err != nil {
 		return nil, nil, err
 	}
+
 	ctx, cancel := context.WithTimeout(parent, duration)
 	return ctx, cancel, nil
 }
