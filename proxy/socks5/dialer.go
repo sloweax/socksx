@@ -15,7 +15,7 @@ type Dialer struct {
 }
 
 type Config struct {
-	methods  []Method
+	Methods  []Method
 	Username string
 	Password string
 }
@@ -88,18 +88,18 @@ func (d *Dialer) response(rw io.ReadWriter) (Reply, Addr, error) {
 }
 
 func (d *Dialer) negotiateMethods(rw io.ReadWriter) (Method, error) {
-	if len(d.config.methods) == 0 {
+	if len(d.config.Methods) == 0 {
 		return MethodNotAcceptable, errors.New("socks5: no methods")
 	}
 
-	if len(d.config.methods) > math.MaxUint8 {
+	if len(d.config.Methods) > math.MaxUint8 {
 		return MethodNotAcceptable, errors.New("socks5: too many methods")
 	}
 
-	buf := make([]byte, 2+len(d.config.methods))
+	buf := make([]byte, 2+len(d.config.Methods))
 	buf[0] = Version // ver
-	buf[1] = byte(len(d.config.methods))
-	for i, m := range d.config.methods {
+	buf[1] = byte(len(d.config.Methods))
+	for i, m := range d.config.Methods {
 		buf[i+2] = byte(m)
 	}
 
@@ -198,7 +198,7 @@ func (d *Dialer) DialWithConn(conn net.Conn, network, address string) (net.Conn,
 }
 
 func (c *Config) hasMethod(method Method) bool {
-	for _, m := range c.methods {
+	for _, m := range c.Methods {
 		if m == method {
 			return true
 		}

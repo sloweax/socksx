@@ -12,8 +12,8 @@ type Dialer struct {
 	proxies []ProxyDialer
 }
 
-func New(proxies ...ProxyDialer) Dialer {
-	d := Dialer{}
+func New(proxies ...ProxyDialer) *Dialer {
+	d := new(Dialer)
 	d.proxies = proxies
 	return d
 }
@@ -106,11 +106,7 @@ func setDialerConn(conn net.Conn, dialer ProxyDialer) error {
 	durationstr, ok := dialer.KWArgs()["ConnTimeout"]
 
 	if !ok {
-		err := conn.SetDeadline(time.Time{})
-		if err != nil {
-			return err
-		}
-		return nil
+		return conn.SetDeadline(time.Time{})
 	}
 
 	return setTimeoutStr(conn, durationstr, conn.SetDeadline)

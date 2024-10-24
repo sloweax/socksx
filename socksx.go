@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/sloweax/socksx/proxy"
-	"github.com/sloweax/socksx/proxy/socks4"
 	"github.com/sloweax/socksx/proxy/socks5"
 )
 
@@ -89,7 +88,7 @@ func main() {
 			var (
 				err   error
 				rconn net.Conn
-				chain []proxy.ProxyDialer
+				proxy *proxy.Dialer
 			)
 
 			raddr, err := server.Handle(conn)
@@ -99,15 +98,12 @@ func main() {
 			}
 
 			for i := 0; i < retry+1; i++ {
-				proxies := picker.Next()
-
-				chain, err = ProxyDialerList(proxies...)
+				chain := picker.Next()
+				proxy, err = chain.ToDialer()
 				if err != nil {
 					log.Print(err)
 					return
 				}
-
-				proxy := proxy.New(chain...)
 				rconn, err = proxy.Dial("tcp", raddr.String())
 				if err != nil {
 					log.Print(err)
@@ -166,27 +162,4 @@ func (a *StringArray) String() string {
 func (a *StringArray) Set(value string) error {
 	*a = append(*a, value)
 	return nil
-}
-
-func ProxyinfoToDialer(p proxy.ProxyInfo) (proxy.ProxyDialer, error) {
-	switch p.Protocol {
-	case "socks4", "socks4a":
-		return socks4.FromProxyInfo(p)
-	case "socks5", "socks5h":
-		return socks5.FromProxyInfo(p)
-	default:
-		return nil, errors.New("unsupported protocol")
-	}
-}
-
-func ProxyDialerList(proxies ...proxy.ProxyInfo) ([]proxy.ProxyDialer, error) {
-	r := make([]proxy.ProxyDialer, 0, len(proxies))
-	for _, p := range proxies {
-		proxy, err := ProxyinfoToDialer(p)
-		if err != nil {
-			return nil, err
-		}
-		r = append(r, proxy)
-	}
-	return r, nil
 }
