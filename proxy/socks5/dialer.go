@@ -73,11 +73,11 @@ func (d *Dialer) response(rw io.ReadWriter) (Reply, Addr, error) {
 	reply := Reply(buf[1])
 
 	if buf[0] != Version {
-		return reply, Addr{}, errors.New("socks5: unknown version")
+		return reply, Addr{}, errors.New("unknown version")
 	}
 
 	if buf[2] != 0 {
-		return reply, Addr{}, errors.New("socks5: invalid rsv")
+		return reply, Addr{}, errors.New("invalid rsv")
 	}
 
 	bnd, err := ReadAddress(rw)
@@ -90,11 +90,11 @@ func (d *Dialer) response(rw io.ReadWriter) (Reply, Addr, error) {
 
 func (d *Dialer) negotiateMethods(rw io.ReadWriter) (Method, error) {
 	if len(d.config.Methods) == 0 {
-		return MethodNotAcceptable, errors.New("socks5: no methods")
+		return MethodNotAcceptable, errors.New("no methods")
 	}
 
 	if len(d.config.Methods) > math.MaxUint8 {
-		return MethodNotAcceptable, errors.New("socks5: too many methods")
+		return MethodNotAcceptable, errors.New("too many methods")
 	}
 
 	buf := make([]byte, 2+len(d.config.Methods))
@@ -113,7 +113,7 @@ func (d *Dialer) negotiateMethods(rw io.ReadWriter) (Method, error) {
 	}
 
 	if buf[0] != Version {
-		return MethodNotAcceptable, errors.New("socks5: unknown version")
+		return MethodNotAcceptable, errors.New("unknown version")
 	}
 
 	m := Method(buf[1])
@@ -123,7 +123,7 @@ func (d *Dialer) negotiateMethods(rw io.ReadWriter) (Method, error) {
 
 func (d *Dialer) handleAuth(rw io.ReadWriter, m Method) error {
 	if !d.config.hasMethod(m) {
-		return errors.New("socks5: unsupported method")
+		return errors.New("unsupported method")
 	}
 
 	switch m {
@@ -132,15 +132,15 @@ func (d *Dialer) handleAuth(rw io.ReadWriter, m Method) error {
 	case MethodNoAuth:
 		return nil
 	case MethodNotAcceptable:
-		return errors.New("socks5: method not acceptable")
+		return errors.New("method not acceptable")
 	default:
-		return errors.New("socks5: unknown method")
+		return errors.New("unknown method")
 	}
 }
 
 func (d *Dialer) userPassAuth(rw io.ReadWriter) error {
 	if len(d.config.Username) > math.MaxUint8 || len(d.config.Password) > math.MaxUint8 {
-		return errors.New("socks5: username/password is too big")
+		return errors.New("username/password is too big")
 	}
 
 	buf := make([]byte, 1, 2+len(d.config.Username)+1+len(d.config.Password))
@@ -159,10 +159,10 @@ func (d *Dialer) userPassAuth(rw io.ReadWriter) error {
 	}
 
 	if buf[0] != VersionUserPass {
-		return errors.New("socks5: unknown username/password version")
+		return errors.New("unknown username/password version")
 	}
 	if buf[1] != 0x00 {
-		return errors.New("socks5: invalid username/password")
+		return errors.New("invalid username/password")
 	}
 
 	return nil
@@ -170,7 +170,7 @@ func (d *Dialer) userPassAuth(rw io.ReadWriter) error {
 
 func (d *Dialer) DialContextWithConn(ctx context.Context, conn net.Conn, network, address string) (net.Conn, error) {
 	if network != "tcp" {
-		return nil, errors.New("socks5: tcp only")
+		return nil, errors.New("tcp only")
 	}
 
 	type result struct {
@@ -208,7 +208,7 @@ func (d *Dialer) DialContextWithConn(ctx context.Context, conn net.Conn, network
 		c.bnd = bnd
 		c.remote, _ = NewAddress(address)
 		c.conn = conn
-		cresult <- result{conn: c, err: reponse.Err(d.Protocol())}
+		cresult <- result{conn: c, err: reponse.Err()}
 	}()
 
 	select {

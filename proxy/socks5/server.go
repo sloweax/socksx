@@ -26,7 +26,7 @@ func (s *Server) Handle(conn net.Conn) (Addr, error) {
 	}
 
 	if reply != ReplyOK {
-		return Addr{}, reply.Err("server")
+		return Addr{}, reply.Err()
 	}
 
 	return addr, nil
@@ -39,12 +39,12 @@ func (s *Server) NegotiateMethods(rw io.ReadWriter) error {
 	}
 
 	if buf[0] != Version {
-		return errors.New("server: unknown method version")
+		return errors.New("unknown method version")
 	}
 
 	nmethods := int(buf[1])
 	if nmethods == 0 {
-		return errors.New("server: no methods")
+		return errors.New("no methods")
 	}
 
 	methods := make([]Method, nmethods)
@@ -56,7 +56,7 @@ func (s *Server) NegotiateMethods(rw io.ReadWriter) error {
 	}
 
 	if !hasMethod(methods, MethodNoAuth) {
-		return errors.New("server: no supported methods")
+		return errors.New("no supported methods")
 	}
 	buf = buf[:0]
 	buf = append(buf, Version)
@@ -71,10 +71,10 @@ func (s *Server) GetRequest(rw io.ReadWriter) (Reply, Command, Addr, error) {
 		return 0xff, 0xff, Addr{}, err
 	}
 	if buf[0] != Version {
-		return 0xff, 0xff, Addr{}, errors.New("server: unknown request version")
+		return 0xff, 0xff, Addr{}, errors.New("unknown request version")
 	}
 	if buf[2] != 0 {
-		return 0xff, 0xff, Addr{}, errors.New("server: invalid rsv")
+		return 0xff, 0xff, Addr{}, errors.New("invalid rsv")
 	}
 
 	cmd := Command(buf[1])
@@ -84,7 +84,7 @@ func (s *Server) GetRequest(rw io.ReadWriter) (Reply, Command, Addr, error) {
 
 	addr, err := ReadAddress(rw)
 	if err != nil {
-		return 0xff, cmd, Addr{}, errors.New("server: failed to read address")
+		return 0xff, cmd, Addr{}, errors.New("failed to read address")
 	}
 
 	return ReplyOK, cmd, addr, nil

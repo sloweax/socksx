@@ -78,7 +78,7 @@ func main() {
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			log.Print(err)
+			log.Print(fmt.Errorf("server: %w", err))
 			continue
 		}
 
@@ -93,14 +93,14 @@ func main() {
 
 			raddr, err := server.Handle(conn)
 			if err != nil {
-				log.Print(err)
+				log.Print(fmt.Errorf("server: %w", err))
 				return
 			}
 
 			for i := 0; i < retry+1; i++ {
 				proxy, err = picker.Next().ToDialer()
 				if err != nil {
-					log.Print(err)
+					log.Print(fmt.Errorf("server: %w", err))
 					return
 				}
 				rconn, err = proxy.Dial("tcp", raddr.String())

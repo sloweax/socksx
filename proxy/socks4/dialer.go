@@ -82,7 +82,7 @@ func (d *Dialer) request(rw io.ReadWriter, cmd byte, address string) error {
 	}
 
 	if d.config.T == 0 && addr.t != AtypIPv4 {
-		return errors.New(d.Protocol() + ": could not get ipv4 of hostname")
+		return errors.New("could not get ipv4 of hostname")
 	}
 
 	buf := make([]byte, 0, 8+len(d.config.ID)+2)
@@ -105,7 +105,7 @@ func (d *Dialer) response(rw io.ReadWriter) (byte, Addr, error) {
 	}
 
 	if buf[0] != 0 {
-		return buf[1], Addr{}, errors.New(d.Protocol() + ": unknown reply version")
+		return buf[1], Addr{}, errors.New("unknown reply version")
 	}
 
 	addr, err := ReadAddress(rw)
@@ -118,7 +118,7 @@ func (d *Dialer) response(rw io.ReadWriter) (byte, Addr, error) {
 
 func (d *Dialer) DialContextWithConn(ctx context.Context, conn net.Conn, network, address string) (net.Conn, error) {
 	if network != "tcp" {
-		return nil, errors.New(d.Protocol() + ": tcp only")
+		return nil, errors.New("tcp only")
 	}
 
 	type result struct {
@@ -202,7 +202,7 @@ func NewAddress(addr string, t int) (Addr, error) {
 			}
 		}
 		if a.t != AtypIPv4 {
-			return Addr{}, errors.New("socks4: could not get ipv4 of hostname")
+			return Addr{}, errors.New("could not get ipv4 of hostname")
 		}
 	}
 

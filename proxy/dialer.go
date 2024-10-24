@@ -32,16 +32,17 @@ func (d *Dialer) Dial(network, address string) (net.Conn, error) {
 		return nil, errors.New("no dialers")
 	}
 
+	p := d.proxies[0]
 	entryctx, cancel, err := proxyCtx(d.proxies[0], context.Background())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s %s: %w", p.Protocol(), p.String(), err)
 	}
 	defer cancel()
 
 	dialer := net.Dialer{}
 	conn, err := dialer.DialContext(entryctx, d.proxies[0].Network(), d.proxies[0].String())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s %s: %w", p.Protocol(), p.String(), err)
 	}
 
 	for i := 0; i < len(d.proxies); i++ {
@@ -70,33 +71,34 @@ func (d *Dialer) Dial(network, address string) (net.Conn, error) {
 		pctx, pcancel, err := proxyCtx(p, parent)
 		if err != nil {
 			conn.Close()
-			return nil, err
+			return nil, fmt.Errorf("%s %s: %w", p.Protocol(), p.String(), err)
 		}
 		defer pcancel()
 
 		pconn, err := p.DialContextWithConn(pctx, conn, pnetwork, paddress)
 		if err != nil {
 			conn.Close()
-			return nil, err
+			return nil, fmt.Errorf("%s %s: %w", p.Protocol(), p.String(), err)
 		}
 		conn = pconn
 	}
 
-	wtimeout, ok := d.proxies[len(d.proxies)-1].KWArgs()["WriteTimeout"]
+	p = d.proxies[len(d.proxies)-1]
+	wtimeout, ok := p.KWArgs()["WriteTimeout"]
 	if ok {
 		err = setTimeoutStr(conn, wtimeout, conn.SetWriteDeadline)
 		if err != nil {
 			conn.Close()
-			return nil, err
+			return nil, fmt.Errorf("%s %s: %w", p.Protocol(), p.String(), err)
 		}
 	}
 
-	rtimeout, ok := d.proxies[len(d.proxies)-1].KWArgs()["ReadTimeout"]
+	rtimeout, ok := p.KWArgs()["ReadTimeout"]
 	if ok {
 		err = setTimeoutStr(conn, rtimeout, conn.SetReadDeadline)
 		if err != nil {
 			conn.Close()
-			return nil, err
+			return nil, fmt.Errorf("%s %s: %w", p.Protocol(), p.String(), err)
 		}
 	}
 
