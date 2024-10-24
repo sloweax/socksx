@@ -43,6 +43,14 @@ func main() {
 		f.Close()
 	}
 
+	if len(proxy_files) == 0 {
+		log.Print("no specified config files, reading from stdin")
+		err := picker.Load(os.Stdin)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
 	if picker.Len() == 0 {
 		log.Fatal("no loaded proxies")
 	}
