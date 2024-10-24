@@ -22,9 +22,11 @@ func main() {
 	var proxy_files StringArray
 	var addr string
 	var verbose bool
+	var retry int
 
 	flag.Var(&proxy_files, "c", "load config file")
 	flag.StringVar(&addr, "a", "127.0.0.1:1080", "listen on address")
+	flag.IntVar(&retry, "r", 1, "retry chain connection x times until success")
 	flag.BoolVar(&verbose, "verbose", false, "log additional info")
 	flag.Parse()
 
@@ -82,29 +84,43 @@ func main() {
 		go func() {
 			defer conn.Close()
 
+			var (
+				err   error
+				rconn net.Conn
+				chain []proxy.ProxyDialer
+			)
+
 			raddr, err := server.Handle(conn)
 			if err != nil {
 				log.Print(err)
 				return
 			}
 
-			proxies := picker.Next()
+			for i := 0; i < retry; i++ {
+				proxies := picker.Next()
 
-			chain, err := ProxyDialerList(proxies...)
-			if err != nil {
-				log.Print(err)
-				return
+				chain, err = ProxyDialerList(proxies...)
+				if err != nil {
+					log.Print(err)
+					return
+				}
+
+				proxy := proxy.New(chain...)
+				rconn, err = proxy.Dial("tcp", raddr.String())
+				if err != nil {
+					log.Print(err)
+					continue
+				}
+				defer rconn.Close()
+
+				log.Print(fmt.Sprintf("connection from %s to %s (%s)", conn.RemoteAddr(), raddr.String(), proxy.String()))
+
+				break
 			}
 
-			proxy := proxy.New(chain...)
-			rconn, err := proxy.Dial("tcp", raddr.String())
 			if err != nil {
-				log.Print(err)
 				return
 			}
-			defer rconn.Close()
-
-			log.Print(fmt.Sprintf("connection from %s to %s (%s)", conn.RemoteAddr(), raddr.String(), proxy.String()))
 
 			err = Bridge(conn, rconn)
 
