@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"unicode"
 )
 
 var globalKWArgs = map[string]string{}
@@ -18,8 +17,102 @@ type ProxyInfo struct {
 	KWArgs   map[string]string
 }
 
-func parseFields(line string) []string {
-	return strings.FieldsFunc(line, unicode.IsSpace)
+func parseFields(line string) ([]string, error) {
+	ret := make([]string, 0)
+	str := strings.Builder{}
+
+	for i := 0; i < len(line); i++ {
+		r := rune(line[i])
+
+		switch r {
+		case '|':
+			if str.Len() != 0 {
+				ret = append(ret, str.String())
+				str.Reset()
+			}
+			ret = append(ret, "|")
+		case ' ', '\t', '\r', '\n', '\v', '\f':
+			if str.Len() != 0 {
+				ret = append(ret, str.String())
+				str.Reset()
+			}
+		case '"', '\'':
+			if str.Len() != 0 {
+				ret = append(ret, str.String())
+				str.Reset()
+			}
+			unquotted, len, err := parseQuotted(line[i:])
+			if err != nil {
+				return nil, err
+			}
+			ret = append(ret, unquotted)
+			i += len
+		default:
+			str.WriteRune(r)
+		}
+	}
+
+	if str.Len() != 0 {
+		ret = append(ret, str.String())
+	}
+
+	return ret, nil
+}
+
+func parseQuotted(line string) (string, int, error) {
+	if len(line) == 0 {
+		return "", 0, errors.New("expected quote")
+	}
+
+	ret := strings.Builder{}
+	quote := rune(line[0])
+	linelen := len(line)
+
+	switch quote {
+	case '"', '\'':
+		break
+	default:
+		return "", 0, errors.New("expected quote")
+	}
+
+	for i := 1; i < len(line); i++ {
+		r := rune(line[i])
+		switch r {
+		case '\\':
+			if linelen <= i+1 {
+				return "", 0, fmt.Errorf("config: string `%s` ended with \\", line)
+			}
+			next := rune(line[i+1])
+			switch next {
+			case 'a':
+				ret.WriteRune('\a')
+			case 'b':
+				ret.WriteRune('\b')
+			case 't':
+				ret.WriteRune('\t')
+			case 'n':
+				ret.WriteRune('\n')
+			case 'f':
+				ret.WriteRune('\f')
+			case 'r':
+				ret.WriteRune('\r')
+			case 'v':
+				ret.WriteRune('\v')
+			default:
+				ret.WriteRune(next)
+			}
+			i += 1
+		case '\'', '"':
+			if r == quote {
+				return ret.String(), i, nil
+			}
+			ret.WriteRune(r)
+		default:
+			ret.WriteRune(r)
+		}
+	}
+
+	return "", 0, fmt.Errorf("config: unterminated string `%s`", line)
 }
 
 func parseChain(args []string) ([]ProxyInfo, error) {
@@ -128,7 +221,10 @@ func loadFile(path string) ([][]ProxyInfo, error) {
 		if strings.HasPrefix(line, "#") {
 			continue
 		}
-		fields := parseFields(line)
+		fields, err := parseFields(line)
+		if err != nil {
+			return nil, err
+		}
 		if len(fields) == 0 {
 			continue
 		}
@@ -167,8 +263,8 @@ func (p *ProxyInfo) String() string {
 	if len(p.Address) != 0 {
 		a += " " + p.Address
 	}
-	if len(p.Args) != 0 {
-		a += " " + strings.Join(p.Args, " ")
+	for _, arg := range p.Args {
+		a += " " + fmt.Sprintf("%q", arg)
 	}
 	for k, v := range p.KWArgs {
 		a += fmt.Sprintf(" %s=%q", k, v)
