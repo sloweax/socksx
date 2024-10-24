@@ -53,7 +53,7 @@ unset ConnTimeout
 
 socks5 1.2.3.4:1234
 
-# Read/Write timeout (only applied to the last proxy of the chain)
+# Read/Write timeout (only applied to the last proxy of the chain after connecting)
 set ReadTimeout 1s
 set WriteTimeout 1s
 
