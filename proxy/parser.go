@@ -41,11 +41,11 @@ func parseFields(line string) ([]string, error) {
 				ret = append(ret, str.String())
 				str.Reset()
 			}
-			unquotted, len, err := parseQuotted(line[i:])
+			unquoted, len, err := parseQuoted(line[i:])
 			if err != nil {
 				return nil, err
 			}
-			ret = append(ret, unquotted)
+			ret = append(ret, unquoted)
 			i += len
 		default:
 			str.WriteRune(r)
@@ -59,7 +59,7 @@ func parseFields(line string) ([]string, error) {
 	return ret, nil
 }
 
-func parseQuotted(line string) (string, int, error) {
+func parseQuoted(line string) (string, int, error) {
 	if len(line) == 0 {
 		return "", 0, errors.New("expected quote")
 	}
