@@ -8,13 +8,6 @@ import (
 
 var globalKWArgs = map[string]string{}
 
-type ProxyInfo struct {
-	Protocol string
-	Address  string
-	Args     []string
-	KWArgs   map[string]string
-}
-
 func parseFields(line string) ([]string, error) {
 	ret := make([]string, 0)
 	str := strings.Builder{}
@@ -113,7 +106,7 @@ func parseQuoted(line string) (string, int, error) {
 	return "", 0, fmt.Errorf("config: unterminated string `%s`", line)
 }
 
-func parseChain(args []string) ([]ProxyInfo, error) {
+func parseChain(args []string) (Chain, error) {
 	split := make([][]string, 0)
 	opts := make([]string, 0)
 
@@ -130,7 +123,7 @@ func parseChain(args []string) ([]ProxyInfo, error) {
 
 	split = append(split, opts)
 
-	r := make([]ProxyInfo, 0, len(split))
+	r := make(Chain, 0, len(split))
 
 	var err error
 	kwargs := globalKWArgs

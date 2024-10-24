@@ -5,11 +5,20 @@ import (
 	"net"
 )
 
+type ProxyInfo struct {
+	Protocol string
+	Address  string
+	Args     []string
+	KWArgs   map[string]string
+}
+
+type Chain []ProxyInfo
+
 type ChainPicker interface {
 	Load(io.Reader) error
-	Add([]ProxyInfo)
-	Next() []ProxyInfo
-	All() [][]ProxyInfo
+	Add(Chain)
+	Next() Chain
+	All() []Chain
 	Len() int
 }
 

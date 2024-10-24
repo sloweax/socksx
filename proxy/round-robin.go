@@ -10,16 +10,16 @@ import (
 type RoundRobin struct {
 	mutex  sync.RWMutex
 	index  int
-	chains [][]ProxyInfo
+	chains []Chain
 }
 
-func (r *RoundRobin) Add(p []ProxyInfo) {
+func (r *RoundRobin) Add(c Chain) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	r.chains = append(r.chains, p)
+	r.chains = append(r.chains, c)
 }
 
-func (r *RoundRobin) Next() []ProxyInfo {
+func (r *RoundRobin) Next() Chain {
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
 	chain := r.chains[r.index%len(r.chains)]
@@ -70,7 +70,7 @@ func (r *RoundRobin) Load(f io.Reader) error {
 	return nil
 }
 
-func (r *RoundRobin) All() [][]ProxyInfo {
+func (r *RoundRobin) All() []Chain {
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
 	return r.chains
