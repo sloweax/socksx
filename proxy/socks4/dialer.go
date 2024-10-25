@@ -142,7 +142,7 @@ func (d *Dialer) DialContextWithConn(ctx context.Context, conn net.Conn, network
 		}
 
 		if reply != ReplyOK {
-			cresult <- result{err: fmt.Errorf("%s: request rejected", d.Protocol())}
+			cresult <- result{err: fmt.Errorf("request rejected")}
 			return
 		}
 
